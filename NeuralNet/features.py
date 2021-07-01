@@ -5,7 +5,6 @@ from PIL import Image
 
 import downloader as dl
 
-PATH = "weights_resnet152_imageNet_tf.h5"
 model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet152', pretrained=True)
 model.eval()
 
