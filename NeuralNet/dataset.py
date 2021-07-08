@@ -62,9 +62,9 @@ def readVideo(championships = None, years = None, baseDir = ".data/clear",  excl
                         try:
                             with VideoFileClip(videopath) as video:
                                 #numframes = 20
-                                new = video.subclip(seconds - 10, seconds + 10)
+                                new = video.subclip(seconds - 5, seconds + 5)
                                 frames = []
-                                for frame in new.iter_frames(fps=1):
+                                for frame in new.iter_frames(fps=3):
                                     frames.append(frame)
                                     #plt.imshow(frame)
                                     #plt.pause(0.1)
@@ -84,6 +84,8 @@ def save_compressed(X,Y):
     np.savez_compressed(f".data/compressed/Y_{t}.npz", Y)
 
 if __name__ == "__main__":
-    X, Y = readVideo()
-    save_compressed(X,Y)
+    #X, Y = readVideo()
+    #save_compressed(X,Y)
+    train = np.load("listgame_Train_300.npy")
+    print(train)
 
