@@ -21,7 +21,7 @@ def downloadDataset():
     mySoccerNetDownloader.downloadGames(files=["1.mkv", "2.mkv"], split=["train","valid","test","challenge"])
 
 
-def readVideo(championships = None, years = None, baseDir = ".data/clear",  excludeLabels = ["Ball out of play", "Kick-off", "Throw-in", "Substitution"]):
+def readVideo(championships = ["italy_serie-a"], years = ["2014-2015"], baseDir = ".data/clear", fps = 3, excludeLabels = ["Ball out of play", "Kick-off", "Throw-in", "Substitution"]):
     """read from video and return a list of frames for each video and the corresponding labels
 
     Args:
@@ -62,12 +62,12 @@ def readVideo(championships = None, years = None, baseDir = ".data/clear",  excl
                         try:
                             with VideoFileClip(videopath) as video:
                                 #numframes = 20
-                                new = video.subclip(seconds - 10, seconds + 10)
+                                new = video.subclip(seconds - 5, seconds + 5)
                                 frames = []
-                                for frame in new.iter_frames(fps=1):
+                                for frame in new.iter_frames(fps=3):
                                     frames.append(frame)
-                                    #plt.imshow(frame)
-                                    #plt.pause(0.1)
+                                    plt.imshow(frame)
+                                    plt.pause(0.1)
                             X.append(frames)
                             Y.append("Goal")
                         except Exception:
@@ -84,6 +84,8 @@ def save_compressed(X,Y):
     np.savez_compressed(f".data/compressed/Y_{t}.npz", Y)
 
 if __name__ == "__main__":
-    X, Y = readVideo()
-    save_compressed(X,Y)
+    #X, Y = readVideo()
+    #save_compressed(X,Y)
+    train = np.load("listgame_Train_300.npy")
+    print(train)
 
