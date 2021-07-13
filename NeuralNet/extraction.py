@@ -2,6 +2,7 @@ import numpy as np
 from numpy.core.fromnumeric import ptp
 import torch
 from torchvision import transforms
+import time
 
 def loadData(data_path, label_path=None):
     X = np.load(data_path, allow_pickle=True)['arr_0']
@@ -15,23 +16,34 @@ def preprocessImages(data):
 
 def extractFeatures(data):
     model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=True)
+    model = torch.nn.Sequential(*(list(model.children())[:-2]))
     model.eval()
 
     tensor_list = []
 
     tran = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+#    for action in range(data.shape[0]):
+#        net_output = []
+#        for frame in range(data.shape[1]):
+#            data[action, frame, :, :, :] = tran(data[action,frame,:,:,:])
+#
+#            input_batch = data[action, frame, :, :, :].unsqueeze(0)
+#            with torch.no_grad():
+#                net_output.append(model(input_batch))
+#        net_output = torch.cat(net_output)
+#        print(f"Clip: {action}, Shape: {net_output.shape}")
+#        tensor_list.append(net_output)
+#    
+#    tensor_list = torch.stack(tensor_list)
     for action in range(data.shape[0]):
-        net_output = []
-        for frame in range(data.shape[1]):
-            data[action, frame, :, :, :] = tran(data[action,frame,:,:,:])
+        input_batch = tran(data[action])
+        s = time.time()
+        with torch.no_grad():
+            output = model(input_batch)
+            st = time.time()
+            print(f"Clip: {len(tensor_list)+1} Time: {round((st-s), 2)} Shape: {output.shape}")
+            tensor_list.append(output)
 
-            input_batch = data[action, frame, :, :, :].unsqueeze(0)
-            with torch.no_grad():
-                net_output.append(model(input_batch))
-        net_output = torch.cat(net_output)
-        print(f"Clip: {action}, Shape: {net_output.shape}")
-        tensor_list.append(net_output)
-    
     tensor_list = torch.stack(tensor_list)
             
     return tensor_list
@@ -42,7 +54,6 @@ if __name__ == "__main__":
     data = loadData(X_path)
     data = preprocessImages(data)
     features = extractFeatures(data)
-    torch.save(features, ".data/features/features.pt")
 
 
 
