@@ -21,7 +21,7 @@ def downloadDataset():
     mySoccerNetDownloader.downloadGames(files=["1.mkv", "2.mkv"], split=["train","valid","test","challenge"])
 
 
-def readVideo(championships = ["italy_serie-a"], years = ["2014-2015"], baseDir = ".data/clear", fps = 3, excludeLabels = ["Ball out of play", "Kick-off", "Throw-in", "Substitution"]):
+def readVideo(championships = ["italy_serie-a"], years = ["2014-2015"], baseDir = ".data/clear", fps = 3, labels = ["Goal", "Corner", "Foul"]):
     """read from video and return a list of frames for each video and the corresponding labels
 
     Args:
@@ -48,9 +48,10 @@ def readVideo(championships = ["italy_serie-a"], years = ["2014-2015"], baseDir 
                 with open(labelpath) as lab:
                     data = json.load(lab)
                     annot = data["annotations"]
-                    actions = [d for d in annot if d["label"] == "Goal"]
+                    actions = [d for d in annot if d["label"] in labels]
                     for act in actions:
                         gameTime = act["gameTime"]
+                        lab = act["label"]
                         time = gameTime.split("-")[0].strip()
                         minutes = gameTime.split("-")[1].split(":")[0].strip()
                         seconds = gameTime.split("-")[1].split(":")[1].strip()
@@ -66,10 +67,10 @@ def readVideo(championships = ["italy_serie-a"], years = ["2014-2015"], baseDir 
                                 frames = []
                                 for frame in new.iter_frames(fps=3):
                                     frames.append(frame)
-                                    plt.imshow(frame)
-                                    plt.pause(0.1)
+                                    #plt.imshow(frame)
+                                    #plt.pause(0.1)
                             X.append(frames)
-                            Y.append("Goal")
+                            Y.append(lab)
                         except Exception:
                             pass
     X = np.array(X)
@@ -86,6 +87,10 @@ def save_compressed(X,Y):
 if __name__ == "__main__":
     #X, Y = readVideo()
     #save_compressed(X,Y)
-    train = np.load("listgame_Train_300.npy")
-    print(train)
+    X = np.load(".data/compressed/X_1626087305931.npz", allow_pickle=True)["arr_0"]
+    Y = np.load(".data/compressed/Y_1626087305931.npz")["arr_0"]
+    print(X.shape)
+    print(Y.shape)
+    print(np.unique(Y))
+    #print(train)
 
