@@ -14,7 +14,7 @@ MODEL = CNN_1d
 PATH = f".model/{MODEL.__name__}.pth"
 print(PATH)
 
-class CustomImageDataset(Dataset):
+class CustomImageDataset(Dataset):#TODO Change X_file, Y_file
     def __init__(self, X_file = ".data/compressed/0.pt", Y_file = ".data/compressed/0_lab.pt", transform=None, target_transform=None):
         self.X = torch.load(X_file).permute(0, 1,-1, 2, 3).float()
         self.Y = torch.load(Y_file).long()
@@ -93,10 +93,11 @@ class Classifier:
             100. * correct / len(test_loader.dataset)))
         return correct, predictions.int()
 
-def readFeatures():
+"""def readFeatures():
     data = torch.load(".data/compressed/0.pt")
     lab = torch.load(".data/compressed/0_lab.pt")
     return data, lab
+"""
 
 def splitDataset(dataset, train_perc = 0.8):
     N = len(dataset)
@@ -106,7 +107,7 @@ def splitDataset(dataset, train_perc = 0.8):
     return train, test
 
 def createDataLoader(dataset):
-    return DataLoader(dataset, batch_size=1)
+    return DataLoader(dataset, batch_size=1)#TODO CHANGE THIS
 
 
 if __name__ == '__main__':
