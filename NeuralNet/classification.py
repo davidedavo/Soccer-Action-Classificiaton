@@ -8,8 +8,11 @@ import pandas as pd
 from torchvision import transforms
 from extraction import FeatureExtractor
 
+if torch.cuda.is_available():
+    DEVICE = 'cuda:0'
+else:
+    DEVICE = 'cpu'
 LR = 0.1
-DEVICE = 'cuda:0'
 MODEL = CNN_1d
 PATH = f".model/{MODEL.__name__}.pth"
 print(PATH)
