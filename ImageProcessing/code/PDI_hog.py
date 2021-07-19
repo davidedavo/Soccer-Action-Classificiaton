@@ -17,11 +17,5 @@ print(regions)
 for (x,y,w,h) in regions:
     cv2.rectangle(original, (x,y), (x+w,y+h), (0,0,255), 1)
 
-'''rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in regions])
-pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
-for (xA, yA, xB, yB) in pick:
-	cv2.rectangle(original, (xA, yA), (xB, yB), (0, 255, 0), 2)'''
-
-
 cv2.imshow("img", original)
 cv2.waitKey(0)
