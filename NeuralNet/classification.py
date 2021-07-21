@@ -14,6 +14,30 @@ MODEL = CNN_1d
 PATH = f".model/{MODEL.__name__}.pth"
 print(PATH)
 
+
+class BigDataset(torch.utils.data.Dataset):
+    
+    def __init__(self, labels, path):
+        'Initialization'
+        self.labels = labels
+        self.list_IDs = range(len(labels))
+        self.path = path
+
+    def __len__(self):
+        'Denotes the total number of samples'
+        return len(self.list_IDs)
+
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        # Select sample
+        ID = self.list_IDs[index]
+
+        # Load data and get label
+        X = torch.load(f'{self.path}/{ID}.pt')
+        y = self.labels[ID]
+
+        return X, y
+
 class CustomImageDataset(Dataset):#TODO Change X_file, Y_file
     def __init__(self, X_file = ".data/compressed/0.pt", Y_file = ".data/compressed/0_lab.pt", transform=None, target_transform=None):
         self.X = torch.load(X_file).permute(0, 1,-1, 2, 3).float()
@@ -111,7 +135,9 @@ def createDataLoader(dataset):
 
 
 if __name__ == '__main__':
-    dataset = CustomImageDataset(transform = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
+    #dataset = CustomImageDataset(transform = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
+    labels = torch.load(".dataset/labels.pt")
+    dataset = BigDataset(labels, ".data")
     
     #features, labels = readFeatures()
     #print(features.shape, labels.shape)
