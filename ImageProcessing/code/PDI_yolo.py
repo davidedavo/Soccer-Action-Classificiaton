@@ -13,7 +13,7 @@ lower_blue = np.array([52,50,50])
 upper_blue = np.array([130,255,255])
 
 # Homography matrix
-pts_src = np.array([[651, 164], [468, 248], [110, 205], [145, 126]])
+pts_src = np.array([[649, 165], [468, 250], [106, 207], [144, 127]])
 pts_dst = np.array([[118, 115], [119, 176], [67, 156], [37, 115]])
 
 H, status = cv2.findHomography(pts_src, pts_dst)
@@ -82,7 +82,6 @@ for i in range(len(boxes)):
     if i in indexes:
         x, y, w, h = boxes[i]
         label = str(classes[class_ids[i]])
-        #color = colors[class_ids[i]]
         conf = str(round(confidences[i], 2))
         if label == 'person':
             person = img[y:y+h, x:x+w] # player founded
@@ -94,6 +93,7 @@ for i in range(len(boxes)):
 
             mask_blue = cv2.inRange(person_hsv, lower_blue, upper_blue)
             nonzero_blue = cv2.countNonZero(mask_blue)
+            
             if nonzero_yellow > 50:
                 cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,255), 1)
                 cv2.putText(img, "Referee", (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
@@ -108,7 +108,7 @@ for i in range(len(boxes)):
 
                 cv2.circle(field, (outX, outY), 2, (0,255,255), 5)
             else:
-                if nonzero_blue > 50:
+                if nonzero_blue > 70:
                     cv2.rectangle(img, (x, y), (x+w, y+h), (255,0,0), 1)
                     cv2.putText(img, "Team blue", (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0), 1)
                     img = cv2.circle(img, center=(x+w//2, y+h), radius=2, color=(255,255,255), thickness=1)

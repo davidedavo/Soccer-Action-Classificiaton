@@ -7,7 +7,7 @@ import os
 MIN_MATCH_COUNT = 3
 
 img = cv2.imread("res/img_01.jpg")
-field = cv2.imread("res/field2.jpg")
+field = cv2.imread("res/field.jpg")
 
 sift = cv2.SIFT_create()
 

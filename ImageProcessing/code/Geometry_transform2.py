@@ -133,4 +133,9 @@ for i in range(len(boxes)):
 cv2.imshow("Copy", copy)
 cv2.imshow("Img", img)
 cv2.imshow("Field", field)
+
+cv2.imwrite("C:/Users/checc/Desktop/img.jpg", copy)
+cv2.imwrite("C:/Users/checc/Desktop/field.jpg", field)
+cv2.imwrite("C:/Users/checc/Desktop/detection.jpg", img)
+
 cv2.waitKey(0)

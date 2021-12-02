@@ -9,7 +9,7 @@ def click_event(event, x, y, flags, params):
         cv2.imshow('image', img)  
 
 if __name__=="__main__":
-    img = cv2.imread('res/img_01.jpg', 1)
+    img = cv2.imread('res/img_02.jpg', 1)
     cv2.imshow('image', img)
     
     cv2.setMouseCallback('image', click_event)

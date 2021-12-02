@@ -10,12 +10,13 @@ upper_red = np.array([33,255,255])
 cap = cv2.VideoCapture("res/cutvideo.mp4")
 backsub = cv2.createBackgroundSubtractorMOG2()
 
+out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
+
 while True:
     success, frame = cap.read()
     if success:
         bsMask = backsub.apply(frame)
         mask_fil = cv2.medianBlur(bsMask, 5)
-        #foreground = cv2.bitwise_and(frame, frame, mask=mask_fil)
 
         cont, hierarchy = cv2.findContours(mask_fil, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         kernel = np.ones((7,7),np.uint8)
@@ -50,6 +51,7 @@ while True:
 
 
         cv2.imshow("Video", frame)
+        out.write(frame)
     
        
         if cv2.waitKey(1) & 0xFF == ord('q'):

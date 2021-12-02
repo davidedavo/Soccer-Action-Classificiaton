@@ -141,7 +141,23 @@ for i in range(len(boxes)):
 
                 cv2.circle(field, (outX, outY), 2, (0,255,255), 5)
             count = count + 1
+            
+        elif label == 'sports ball':
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0,0,0), 1)
+            cv2.putText(img, "Ball", (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 1)
+            img = cv2.circle(img, center=(x+w//2, y+h), radius=2, color=(255,255,255), thickness=1)
+
+            point = np.array([[x+w//2, y+h]], np.float32)
+            point=np.array([point])
+
+            outPoint = cv2.perspectiveTransform(point, H)
+            outX = round(outPoint[0][0][0])
+            outY = round(outPoint[0][0][1])
+
+            cv2.circle(field, (outX, outY), 2, (0,0,0), 5)
 
 cv2.imshow("Img", img)
 cv2.imshow("Field", field)
+cv2.imwrite("C:/Users/checc/Desktop/detection_01.jpg", img)
+#cv2.imwrite("C:/Users/checc/Desktop/field_01.jpg", field)
 cv2.waitKey(0)
