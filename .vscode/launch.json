@@ -7,11 +7,12 @@
         
 
         {
-            "name": "Python: Main",
+            "name": "Python: Classification",
             "type": "python",
             "request": "launch",
             "program": "NeuralNet/classification.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": ["-l", "0.1", "-a", "1", "-m", "0"]
         },
         {
             "name": "Python: Current",

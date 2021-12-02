@@ -10,12 +10,21 @@ import torch.nn as nn
 
 
 class FeatureExtractor(nn.Module):
+    """Extract feature using Resnet 18, with pretrained weigths on ImageNet. 
+    
+    Feature are extracted using Resnet without the last two layers (Global Average Pooling and Linear)
 
-    def __init__(self):
+    Args:
+        avg_pool(:class:`bool`): If True we add a pooling layer with kernel_size=2x2 at the end of the feature extractor.
+    """
+    def __init__(self, avg_pool=False):
         super().__init__()
+        self._avg_pool=avg_pool
         self._model = torchvision.models.resnet18(pretrained=True)
         #self._model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=True)
         self._model = torch.nn.Sequential(*(list(self._model.children())[:-2]))
+        #print(self._model)
+        self.pool = nn.AvgPool2d(kernel_size = 2, stride = 2)
         #self._model.eval()
 
     def forward(self, data):
@@ -25,45 +34,15 @@ class FeatureExtractor(nn.Module):
         flatt = data.flatten(start_dim=0, end_dim=1)
         
         output = self._model(flatt) # output.shape = [30, 512, 7, 13]
-        output = output.reshape(dim_0, output.shape[0], output.shape[1], -1)
+        if self._avg_pool:
+            output = self.pool(output)
+        print(f"1.output after resnet: {output.shape}")
+        output = output.reshape(dim_0, dim_1, output.shape[1], -1)
+        #print(f"2.output after reshape: {output.shape}")
         output = output.permute(0, 2, 1, 3)
+        #print(f"3.output after permute: {output.shape}")
         output = output.flatten(start_dim=2)
-        print(output.shape)
+        print(f"4.output after flatten dim 2: {output.shape}")
         return output
-
-def preprocessImages(clips_np):
-    clips = torch.from_numpy(np.swapaxes(np.swapaxes(clips_np, 2, 4), 3, 4)).type(torch.float32)
-    return clips
-
-def fit(data):
-    '''
-        Args:
-            data: Dummy arg for clips, needs to be replaced with data coming from dataLoader
-    '''
-
-    model1 = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=True)
-    model1 = torch.nn.Sequential(*(list(model1.children())[:-2]))
-    model1.eval()
-    processed_clips = 0
-
-    # Need to swapaxes in order to get torch-compatible shape
-    clips = preprocessImages(data)
-
-    tran = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    for action in range(clips.shape[0]):
-        input_batch = tran(clips[action]) # Input batch = 1 clip = 30 frames
-        s = time.time()
-        with torch.no_grad():
-            output = model1(input_batch) # output.shape = [30, 512, 7, 13]
-            processed_clips += 1
-            st = time.time()
-            print(f"Clip: {processed_clips} Time: {round((st-s), 2)} Shape: {output.shape}")
-
-    # Add here the classifier using "output" as the network input
-
-
-
-
-
 
     

@@ -1,96 +1,76 @@
-import numpy as np
-import SoccerNet
-from SoccerNet.Downloader import SoccerNetDownloader
-import os
-import cv2
-from moviepy.video.io.VideoFileClip import VideoFileClip
-import matplotlib.pyplot as plt
-import json
-import time
+import torch
+from torch.utils.data import DataLoader, random_split, Dataset
 
-def downloadDataset():
-    mySoccerNetDownloader = SoccerNetDownloader(LocalDirectory=".data/clear")
+BATCH_SIZE=8
 
-    # download labels SN v2
-    mySoccerNetDownloader.downloadGames(files=["Labels-v2.json"], split=["train","valid","test"])
-    # download labels for camera shot
-    mySoccerNetDownloader.downloadGames(files=["Labels-cameras.json"], split=["train","valid","test"]) 
-    
-    mySoccerNetDownloader.password = input("Password for videos?:\n")
-    # download LQ Videos
-    mySoccerNetDownloader.downloadGames(files=["1.mkv", "2.mkv"], split=["train","valid","test","challenge"])
+class BigDataset(Dataset):
+    """Dataset for handling big quantities of data.
 
+    Extends the class :class:`Dataset`
 
-def readVideo(championships = ["italy_serie-a"], years = ["2014-2015"], baseDir = ".data/clear", fps = 3, labels = ["Goal", "Corner", "Foul"]):
-    """read from video and return a list of frames for each video and the corresponding labels
+    This class avoids to load all the data in memory at the same time, but loads only the necessary ones.
+    The dataset folder must be contain file with only single tensors.
+    File name must be the index of the tensor and must be formatted as "{index}_clip.pt"
 
     Args:
-        championships ([type], optional): Filters the championships. If None there is no filter. Defaults to None.
-        years ([type], optional): Filters the years. If None there is no filter.. Defaults to None.
-        baseDir (str, optional): Defaults to ".data/clear".
-        excludeLabels (list, optional): List of labels to exclude. Defaults to ["Ball out of play", "Kick-off", "Throw-in", "Substitution"].
+        labels (:class:`Tensor`): Tensor containing all labels. Shape = (num_elements)
 
-    Returns:
-        np.ndarray: Shape (n_actions, frames_per_action, width, height, channels),
-        np.ndarray: Shape (n_actions),
+        path (:class:`str`): Path of the folder that contains the dataset files.
+
+        transform: Transformations on the image red from the dataset.
     """
-    championships = championships if championships is not None else os.listdir(baseDir)
-    X = []
-    Y = []
-    for championshipName in championships:
-        years = years if years is not None else os.listdir(f"{baseDir}/{championshipName}")
-        for year in years:
-            path = f"{baseDir}/{championshipName}/{year}"
-            folderList = os.listdir(path)
-            for f in folderList:
-                labelpath = path+f"/{f}/Labels-v2.json"
-                print(f"partita {f}")
-                with open(labelpath) as lab:
-                    data = json.load(lab)
-                    annot = data["annotations"]
-                    actions = [d for d in annot if d["label"] in labels]
-                    for act in actions:
-                        gameTime = act["gameTime"]
-                        lab = act["label"]
-                        time = gameTime.split("-")[0].strip()
-                        minutes = gameTime.split("-")[1].split(":")[0].strip()
-                        seconds = gameTime.split("-")[1].split(":")[1].strip()
-                        seconds = int(seconds) + int(minutes)*60
+    def __init__(self, labels, path, transform = None):
+        'Initialization'
+        self.labels = labels
+        self.list_IDs = range(len(labels))
+        self.path = path
+        self.transform = transform
 
-                        videopath = path+f"/{f}/{time}.mkv"
-                        if not os.path.isfile(videopath):
-                            continue 
-                        try:
-                            with VideoFileClip(videopath) as video:
-                                #numframes = 20
-                                new = video.subclip(seconds - 5, seconds + 5)
-                                frames = []
-                                for frame in new.iter_frames(fps=3):
-                                    frames.append(frame)
-                                    #plt.imshow(frame)
-                                    #plt.pause(0.1)
-                            X.append(frames)
-                            Y.append(lab)
-                        except Exception:
-                            pass
-    X = np.array(X)
-    Y = np.array(Y)
-    print(X.shape)
-    print(Y.shape)
-    return X,Y
+    def __len__(self):
+        'Denotes the total number of samples'
+        return len(self.list_IDs)
 
-def save_compressed(X,Y):
-    t = round(time.time() * 1000)
-    np.savez_compressed(f".data/compressed/X_{t}.npz", X)
-    np.savez_compressed(f".data/compressed/Y_{t}.npz", Y)
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        # Select sample
+        ID = self.list_IDs[index]
 
-if __name__ == "__main__":
-    #X, Y = readVideo()
-    #save_compressed(X,Y)
-    X = np.load(".data/compressed/X_1626087305931.npz", allow_pickle=True)["arr_0"]
-    Y = np.load(".data/compressed/Y_1626087305931.npz")["arr_0"]
-    print(X.shape)
-    print(Y.shape)
-    print(np.unique(Y))
-    #print(train)
+        # Load data and get label
+        X = torch.load(f'{self.path}/{ID}_clip.pt').permute(0, -1, 1, 2).float().div(255)     
+        #print(f"DT: max: {X.max()}; min: {X.min()}")
+        if self.transform:
+            X = self.transform(X)
+        y = self.labels[ID].long()
+        return X, y
 
+class UnNormalize(object):
+    """Unormalize a torch tensor
+        
+    """
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+        Returns:
+            Tensor: Normalized image.
+        """
+        for frame in tensor:
+            for t, m, s in zip(frame, self.mean, self.std):
+                t.mul_(s).add_(m)
+                # The normalize code -> t.sub_(m).div_(s)
+        return tensor
+
+def splitDataset(dataset, train_perc = 0.7, eval_perc=0.15):
+    N = len(dataset)
+    n_train = round(N*train_perc)
+    n_eval = round(N*eval_perc)
+    n_test = N - n_train - n_eval
+    train, dev, test, = random_split(dataset, [n_train, n_eval, n_test])
+    return train, dev, test
+
+def createDataLoader(dataset, batch_size=BATCH_SIZE):
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
